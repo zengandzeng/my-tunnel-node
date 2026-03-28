@@ -1,2 +1,3 @@
 FROM cloudflare/cloudflared:latest
-ENTRYPOINT ["sh", "-c", "cloudflared tunnel --no-autoupdate run --token ${ARGO_TOKEN}"]
+# 直接运行程序，不依赖 sh
+CMD ["tunnel", "--no-autoupdate", "run", "--token", "${ARGO_TOKEN}"]
