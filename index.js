@@ -1,39 +1,39 @@
-const { spawn } = require('child_process');
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
+const { spawn } = require("child_process");
+const http = require("http");
+const https = require("https");
+const fs = require("fs");
 
-// 1. 基础 Web 服务
+// 1. Basic Web Server
 http.createServer((req, res) => {
   res.writeHead(200);
-  res.end("Service is standby");
+  res.end("Service is running");
 }).listen(process.env.PORT || 8080);
 
 const token = process.env.ARGO_TOKEN;
-const fileName = './cloudflared';
+const fileName = "./cloudflared";
 
 if (token) {
-  console.log("正在下载核心组件...");
+  console.log("Downloading core components...");
   const file = fs.createWriteStream(fileName);
 
   https.get("https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64", (res) => {
     res.pipe(file);
     file.on('finish', () => {
       file.close();
-      console.log("下载已完成，等待系统释放文件...");
+      console.log("Download complete, waiting for system to release file...");
 
-      // 关键修正：给系统 2 秒钟缓冲，避免 ETXTBSY 报错
+      // Wait 3 seconds to avoid ETXTBSY error
       setTimeout(() => {
-        console.log("正在赋予执行权限并启动隧道...");
+        console.log("Setting permissions and starting tunnel...");
         spawn('chmod', ['+x', fileName]);
         
         const tunnel = spawn(fileName, ['tunnel', '--no-autoupdate', 'run', '--token', token]);
 
-        tunnel.stdout.on('data', (data) => console.log(`隧道日志: ${data}`));
-        tunnel.stderr.on('data', (data) => console.log(`隧道状态: ${data}`));
-      }, 2000); 
+        tunnel.stdout.on('data', (data) => console.log(`Tunnel Log: ${data}`));
+        tunnel.stderr.on('data', (data) => console.log(`Tunnel Status: ${data}`));
+      }, 3000); 
     });
   });
 } else {
-  console.log("错误：未找到 ARGO_TOKEN");
+  console.log("Error: ARGO_TOKEN not found");
 }
